@@ -11,8 +11,8 @@ def getSummonerNames(m_d):
 
 def getSummonerIDs(m_d):
     ret = []
-    for i in range(len(m_d["participantIdentities"])):
-        ret.append(m_d["participantIdentities"][i]["player"]["summonerId"])
+    for i in range(len(m_d["participants"])):
+        ret.append(m_d["participants"][i]["summonerId"])
     return ret
 
 def findOtherTeam(arr, me):
@@ -43,7 +43,7 @@ def main():
     fancy = True
     
     mx = 5 # how many top champs are recorded
-    TABSIZE = 14 # width of tabs in output
+    TABSIZE = 18 # width of tabs in output
 
     username = sys.argv[1]
     api_key = sys.argv[2]
@@ -55,10 +55,8 @@ def main():
         print("Invalid API key.")
         return
 
-    my_matches = watcher.match.matchlist_by_account(my_region, me["accountId"])
-    match_detail = watcher.match.by_id(my_region, my_matches["matches"][0]["gameId"])
-
-    ids = getSummonerIDs(match_detail)
+    current_match = watcher.spectator.by_summoner(region=my_region, encrypted_summoner_id=me["id"])
+    ids = getSummonerIDs(current_match)
     otherTeam = findOtherTeam(ids, me)
     otherMasteries = {}
 
@@ -66,7 +64,11 @@ def main():
         champs = watcher.champion_mastery.by_summoner(my_region, otherTeam[i])
         for dc in champs:
             if fancy:
-                score = dc["championLevel"] * dc["championPoints"]
+                multiplier = 1
+                if dc["championLevel"] == 6: multiplier = 2
+                elif dc["championLevel"] == 7: multiplier = 3
+
+                score = multiplier * dc["championPoints"]
                 if dc["championId"] not in otherMasteries: otherMasteries[dc["championId"]] = score
                 else: otherMasteries[dc["championId"]] += score
 
@@ -82,7 +84,7 @@ def main():
         if i == mx-1: break # break to only include top mx
 
     for champKey in top.keys():
-        print(f"{getChampFromKey(champKey)}\t{champKey}\t{top[champKey]}".expandtabs(TABSIZE))
+        print(f"{getChampFromKey(champKey)}\t{top[champKey]}".expandtabs(TABSIZE))
 
 if __name__ == "__main__":
     main()
