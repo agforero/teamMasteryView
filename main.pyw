@@ -55,7 +55,11 @@ def main():
         print("Invalid API key.")
         return
 
-    current_match = watcher.spectator.by_summoner(region=my_region, encrypted_summoner_id=me["id"])
+    try: current_match = watcher.spectator.by_summoner(region=my_region, encrypted_summoner_id=me["id"])
+    except requests.exceptions.HTTPError:
+        print("Looks like this summoner is not currently in a game.")
+        return
+
     ids = getSummonerIDs(current_match)
     otherTeam = findOtherTeam(ids, me)
     otherMasteries = {}
